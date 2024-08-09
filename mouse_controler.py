@@ -16,6 +16,7 @@ direction_lock = Lock()
 def move_mouse():
     global movement_direction
     global speed 
+    last_direction = "No significant movement"
     while True:
         
         x, y = pyautogui.position()
@@ -32,12 +33,16 @@ def move_mouse():
             elif current_direction == "Right":
                 x += mouse_speed * speed
 
+            if current_direction == "Click" and last_direction != "Click":
+                pyautogui.click(button='right')
+            else:
             # Garantir que o cursor permaneça dentro dos limites da tela
-            x = max(0, min(screen_width - 1, x))
-            y = max(0, min(screen_height - 1, y))
+                x = max(0, min(screen_width - 1, x))
+                y = max(0, min(screen_height - 1, y))
 
-            pyautogui.moveTo(x, y, duration=0.2)
-            print(f"Movendo {current_direction} - Pos Atual: {x} {y} - sd {speed} - d {mouse_speed * speed}", end='\r')
+                pyautogui.moveTo(x, y, duration=0.2)
+                print(f"Movendo {current_direction} - Pos Atual: {x} {y} - sd {speed} - d {mouse_speed * speed}", end='\r')
+            last_direction = current_direction
         else:
             time.sleep(0.2)  # Pequena pausa para evitar uso excessivo da CPU
 

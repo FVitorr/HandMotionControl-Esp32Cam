@@ -1,3 +1,4 @@
+import time
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -15,13 +16,25 @@ acceleration_factor = 0.5  # Fator de aceleração para o movimento
 min_speed = 1 # Velocidade mínima do movimento
 max_speed = 100  # Velocidade máxima do movimento
 
-def is_hand_open(hand_landmarks):
+def r_valores(hand_landmarks):
     # Verifica a distância entre a ponta dos dedos e a palma da mão
     thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
     index_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
     middle_tip = hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_TIP]
     ring_tip = hand_landmarks.landmark[mp_hands.HandLandmark.RING_FINGER_TIP]
     pinky_tip = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP]
+
+    return thumb_tip,index_tip,middle_tip,ring_tip,pinky_tip
+
+def is_hand_open(hand_landmarks):
+
+    d = r_valores(hand_landmarks)
+
+    thumb_tip = d[0]
+    index_tip = d[1]
+    middle_tip = d[2]
+    ring_tip = d[3]
+    pinky_tip = d[4]
 
     # Distância entre a ponta dos dedos e a base do dedo (palma)
     index_distance = np.sqrt((index_tip.x - hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_MCP].x) ** 2 +
@@ -37,6 +50,14 @@ def is_hand_open(hand_landmarks):
             middle_distance < hand_open_threshold and
             ring_distance < hand_open_threshold and
             pinky_distance < hand_open_threshold)
+
+
+def click(hand_landmarks):
+    d = r_valores (hand_landmarks)
+    thumb_distance = np.sqrt((d[0].x - hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP].x) ** 2 +
+                             (d[0].y - hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_MCP].y) ** 2)
+    print(thumb_distance)
+    return thumb_distance < 0.10
 
 def detect_hand_movement():
     previous_y = None
@@ -74,7 +95,15 @@ def detect_hand_movement():
                         movement_direction = "No significant movement"
                         last_movement_distance = 0  # Resetar a distância
                         c_speed['movement_speed'] = 0
+                        
+                    elif click(hand_landmarks):
+                        movement_direction = "Click"
+                        last_movement_distance = 0  # Resetar a distância
+                        c_speed['movement_speed'] = 0
+
+                        time.sleep(1)
                     else:
+
                         if previous_y is not None and previous_x is not None:
                             delta_y = palm_y - previous_y
                             delta_x = palm_x - previous_x
@@ -115,7 +144,7 @@ def detect_hand_movement():
                             
                             last_movement_distance = distance
 
-                    last_movement_direction = movement_direction
+                    last_movement_direction = movement_direction if movement_direction != "Click" else "No significant movement"
 
                     previous_y = palm_y
                     previous_x = palm_x
